@@ -86,6 +86,18 @@ window.PLAYBOOK = {
 
   boards: [
     {
+      id: "power-1of4",
+      program: "Power",
+      progression: "1/4",
+      category: "Strength",
+      date: "2026-09-26",
+      coach: "coach-b",
+      note: "Paired up, 90 seconds to finish both moves. Grind slow and controlled, then get explosive and sharp.",
+      quip: "Grind like you mean it. Explode like you meant that too.",
+      file: "power-1of4.jpg",
+      transcript: "Power! 1/4. Format: 90 secs to finish both. Paired up, grind 1st and explosive 2nd exercises. Pair A sets 1,3,5,7,9. Pair B sets 2,4,6,8,10. Please read, if don't know, ask! Grind: movement should be slow and controlled, to activate your working muscles, shouldn't fatigue out. Explosive: fast and sharp movement, always come to a dead stop each rep, shouldn't struggle to complete reps. Front squat press, hang pull, KB swing."
+    },
+    {
       id: "strength-4-sets",
       program: "Strength",
       progression: "",
@@ -219,13 +231,13 @@ window.PLAYBOOK = {
     },
     {
       id: "cardio-ewww",
-      program: "Cardio. Ewww...",
+      program: "Cardio U",
       progression: "",
       category: "Cardio",
       date: "2026-09-25",
       coach: "coach-d",
       note: "Three zones of four exercises, two laps each. Match your intensity to your heart rate and speed up as you go.",
-      quip: "I know. I drew a cat so you'd forgive me.",
+      quip: "Cardio? Ewww. I know. I drew a cat so you'd forgive me.",
       file: "IMG20260925090237.jpg",
       transcript: "Cardio - ewww. Format: 3 zones of 4 exercises, 2 sets on each exercise, 2 laps in the zone. Complete all 3 zones. Objective: regulate intensity to match HR, heart rate control, pacing awareness, progressive acceleration. A-meow-tti."
     }
