@@ -2,52 +2,59 @@
 
 A flipbook of whiteboard sketches from the coaches at BFT Beauty World.
 
-## What's in here
+## Where everything lives
+
+The **"BFT Playbook" Google Sheet is the single source of truth.** The website
+reads everything from it every time the page loads:
+
+| Sheet tab  | What it controls on the site |
+|------------|------------------------------|
+| Entries    | The boards. Only rows with Status = Live are shown. |
+| Coaches    | Coach names, profiles and photos. Rows with "Show on site" = No are hidden. |
+| Sessions   | Session names and their type (Cardio, Strength, HIIT, Hybrid), which drives the filter buttons. |
+
+The Coaches and Sessions tabs also feed the "Who drew it?" and "Session"
+dropdowns in the Tally form automatically (Playbook → Turn on automatic Tally sync).
+
+## What's in this folder
 
 ```
-index.html           the flipbook (page, styles, behaviour)
-data.js              coaches and boards: the only file you edit day to day
-images/boards/       cleaned boards, page size (900 x 1200)
-images/full/         cleaned boards, zoom size (1500 x 2000)
-images/original/     the untouched photos, for the "Original photo" button
-images/coaches/      coach photos (square, e.g. 400 x 400)
-images/brand/        BFT logos (cyan and white SVG)
+index.html     page shell + loads the live feed from the Sheet
+app.js         the flipbook itself: rendering, filters, lightbox, etc.
+data.js        studio details only (name, address, the 8-for-$60 offer)
+images/brand/  BFT logos
 ```
 
-## Rename a coach or add their bio
+The `images/boards`, `images/full` and `images/original` folders are no longer
+used: every board photo now lives on Cloudinary. They can be deleted.
 
-Open `data.js` and edit the entry under `coaches`. Keep the `id` the same, or update
-every board that points to it.
+## Common jobs (all in the Sheet, no file edits)
 
-For a photo, add a square image to `images/coaches/` and set
-`photo: "images/coaches/their-name.jpg"`. Leave it `""` to show initials.
+- **Add a coach:** add a row on the Coaches tab. They appear in the Tally form
+  within seconds and on the site within a couple of minutes.
+- **Coach photo:** put an image link in their "Photo URL" cell.
+- **Add a session:** add a row on the Sessions tab and pick its Type.
+- **Change who drew a board:** edit the Coach cell on its Entries row.
+- **Hide a board:** set its Status to Hidden.
 
-## Change who drew a board
+## Speed
 
-In `data.js`, find the board under `boards` and change `coach: "coach-a"` to the right id.
-
-## Add a new board
-
-1. Put the cleaned image in `images/boards/`, `images/full/` and `images/original/`
-   with the same file name.
-2. Copy an existing board entry in `data.js` and change the fields.
-   `category` must be `Cardio`, `Strength`, `HIIT` or `Hybrid`.
+The Google feed can take a few seconds to answer. Returning visitors see their
+last saved copy instantly while the fresh one loads; if there's something new,
+a "tap to refresh" note appears.
 
 ## Share links
 
-Every board has its own link: `…/index.html#summit-3-of-6` (the board's `id`).
-Coach profiles work the same way: `…/index.html#coach-a`.
+Every board has its own link: `…/index.html#<board id>`, and coach profiles
+work the same way.
 
-## Put it on GitHub Pages
+## Hosting
 
-1. Create a new public repository and upload everything in this folder.
-2. Settings → Pages → Source: "Deploy from a branch", branch `main`, folder `/ (root)`.
-3. The site appears at `https://<your-username>.github.io/<repo-name>/` in a minute or two.
-
-Moving to bft-bw.com later: add a `CNAME` file containing e.g. `flipbook.bft-bw.com`,
-and point that subdomain's DNS (CNAME record) to `<your-username>.github.io`.
+GitHub Pages: Settings → Pages → Source "Deploy from a branch", branch `main`,
+folder `/ (root)`. To move to bft-bw.com later, add a `CNAME` file (e.g.
+`flipbook.bft-bw.com`) and point that subdomain's DNS to `<username>.github.io`.
 
 ## Libraries
 
-- Page flip: [StPageFlip](https://github.com/Nodlik/StPageFlip) 2.0.7, loaded from jsDelivr
+- Page flip: [StPageFlip](https://github.com/Nodlik/StPageFlip) 2.0.7, from jsDelivr
 - Fonts: Oswald and Kalam from Google Fonts

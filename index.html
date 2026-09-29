@@ -213,6 +213,8 @@ button{cursor:pointer}
   .sel-wrap select{max-width:120px;font-size:12px;padding:7px 28px 7px 10px}
   .card{scroll-margin-top:16px}
 }
+body:not(.mode-book):not(.mode-stack) #book-area,body:not(.mode-book):not(.mode-stack) #stack{display:none}
+.loading{display:flex;align-items:center;justify-content:center;min-height:50vh;font-family:'Kalam',cursive;font-size:22px;color:#1A1A1A;opacity:.7}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -232,6 +234,7 @@ button{cursor:pointer}
 </header>
 
 <main class="stage" id="top">
+  <div class="loading" id="loading" role="status">Opening the Playbook&hellip;</div>
   <section id="book-area" aria-label="Flipbook">
     <div id="book-wrap"><div class="rings" id="rings" aria-hidden="true"></div></div>
     <div class="controls">
@@ -266,27 +269,14 @@ button{cursor:pointer}
 /* =====================================================================
    LIVE FEED BOOTSTRAP
    ---------------------------------------------------------------------
-   data.js gives us the published boards + coach roster as a safe base.
-   Here we fetch the same data live from the "BFT Playbook" Google
-   Sheet (via its Apps Script web app), merge it on top of that base,
-   and only then kick off rendering (window.__initPlaybook, in app.js).
+   Everything on the site (coaches, sessions, boards) comes from the
+   "BFT Playbook" Google Sheet via its Apps Script web app. data.js only
+   holds the studio details.
 
-   Merge rules:
-     - Coaches match to the static roster by lowercased name, so a
-       Sheet coach named "Jay" updates the existing coach-a entry in
-       place (its id is kept, so legacy boards pointing at "coach-a"
-       still resolve correctly) instead of creating a duplicate.
-     - A Sheet coach whose name isn't in the static roster yet is
-       appended as a new coach.
-     - Only non-empty Sheet fields overwrite the static ones, so a
-       coach's Sheet row can be filled in gradually.
-     - Boards already published in data.js are kept as-is. Any live
-       board from the Sheet ("Entries") is appended after them,
-       skipping ids already present. A live board's free-text coach
-       name is resolved against the same name map used above.
-     - If the live feed can't be reached (offline, first load before
-       the Apps Script deployment exists, etc.) the site still renders
-       fine from data.js alone — the fetch failure is swallowed.
+   The Google feed can take several seconds to answer, so the last copy
+   is saved in the visitor's browser and shown instantly on their next
+   visit, while the fresh copy loads in the background. If the fresh
+   copy has something new, a "tap to refresh" note appears.
    ===================================================================== */
 (function boot(){
   const LIVE_URL = "https://script.google.com/macros/s/AKfycbycSUPo_1S5GV2k7vyHKT1jJNsblNuEoTMFF99L3bnBFVwOQ-I1_xc8BxsVtEHV19wY/exec";
@@ -349,46 +339,43 @@ button{cursor:pointer}
     D.boards.sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   }
 
-  // The Google feed can take several seconds to answer, so we don't make
-  // visitors wait for it. The last copy we got is kept in this browser and
-  // used straight away; the fresh copy loads in the background. If it has
-  // something new, a small "tap to refresh" note appears.
   const CACHE_KEY = "bft-playbook-live-v1";
-  const WAIT_MS = 5000; // first-ever visit: wait this long for the feed, then show what we have
   let started = false;
-  function start(){ if (started) return; started = true; sortNewestFirst(); window.__initPlaybook(); }
+  function start(){
+    if (started) return; started = true;
+    sortNewestFirst();
+    const l = document.getElementById("loading"); if (l) l.remove();
+    window.__initPlaybook();
+  }
   function readCache(){ try { return JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch(e){ return null; } }
   function saveCache(live){ try { localStorage.setItem(CACHE_KEY, JSON.stringify(live)); } catch(e){} }
   function sig(live){ return live ? JSON.stringify([live.boards||[], live.coaches||[]]) : ""; }
-  function offerRefresh(){
+  function note(msg, onTap){
     const t = document.getElementById("toast");
     if (!t) return;
-    t.textContent = "New boards are in. Tap to refresh.";
-    t.style.cursor = "pointer";
-    t.onclick = () => location.reload();
+    t.textContent = msg;
+    t.style.cursor = onTap ? "pointer" : "";
+    t.onclick = onTap || null;
     t.hidden = false;
   }
 
   const cached = readCache();
   let shown = null; // the feed copy the page is currently showing
 
-  const fresh = fetch(LIVE_URL, {cache:"no-store"})
-    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP "+r.status)));
+  fetch(LIVE_URL, {cache:"no-store"})
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP "+r.status)))
+    .then(live => {
+      saveCache(live);
+      if (!started){ mergeLive(live); shown = live; start(); }
+      else if (sig(live) !== sig(shown)) note("New boards are in. Tap to refresh.", () => location.reload());
+    })
+    .catch(err => {
+      console.warn("Live feed unavailable.", err);
+      if (!started){ start(); note("Couldn't reach the Playbook just now. Try again in a minute."); }
+    });
 
-  fresh.then(live => {
-    saveCache(live);
-    if (!started){ mergeLive(live); shown = live; start(); }
-    else if (sig(live) !== sig(shown)) offerRefresh();
-  }).catch(err => {
-    console.warn("Live feed unavailable, showing the saved/published boards only.", err);
-    start();
-  });
-
-  if (cached){
-    mergeLive(cached); shown = cached; start();
-  } else {
-    setTimeout(start, WAIT_MS);
-  }
+  // Returning visitor: show the saved copy straight away.
+  if (cached){ mergeLive(cached); shown = cached; start(); }
 })();
 </script>
 
