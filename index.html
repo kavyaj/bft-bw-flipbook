@@ -7,6 +7,9 @@
 <meta property="og:title" content="The Coach's Playbook · BFT Beauty World">
 <meta property="og:description" content="Whiteboards from the coaches at BFT Beauty World.">
 <title>The Coach's Playbook</title>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://res.cloudinary.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Oswald:wght@400;500;600;700&display=swap">
@@ -331,7 +334,8 @@ button{cursor:pointer}
         coach: coachObj ? coachObj.id : (lb.coach||""),
         note: lb.note||"",
         quip: lb.quip||"",
-        page: lb.image||"",
+        // smaller copy for the book page; full size is kept for the zoom view
+        page: String(lb.image||"").replace("c_limit,w_1800", "c_limit,w_1000"),
         full: lb.image||"",
         original: lb.original||lb.image||"",
         transcript: lb.transcript||""
@@ -340,11 +344,51 @@ button{cursor:pointer}
     });
   }
 
-  fetch(LIVE_URL, {cache:"no-store"})
-    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP "+r.status)))
-    .then(mergeLive)
-    .catch(err => console.warn("Live feed unavailable, showing the published boards only.", err))
-    .then(() => window.__initPlaybook());
+  // Newest boards first, oldest last (dates are yyyy-mm-dd, so text order works)
+  function sortNewestFirst(){
+    D.boards.sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }
+
+  // The Google feed can take several seconds to answer, so we don't make
+  // visitors wait for it. The last copy we got is kept in this browser and
+  // used straight away; the fresh copy loads in the background. If it has
+  // something new, a small "tap to refresh" note appears.
+  const CACHE_KEY = "bft-playbook-live-v1";
+  const WAIT_MS = 5000; // first-ever visit: wait this long for the feed, then show what we have
+  let started = false;
+  function start(){ if (started) return; started = true; sortNewestFirst(); window.__initPlaybook(); }
+  function readCache(){ try { return JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch(e){ return null; } }
+  function saveCache(live){ try { localStorage.setItem(CACHE_KEY, JSON.stringify(live)); } catch(e){} }
+  function sig(live){ return live ? JSON.stringify([live.boards||[], live.coaches||[]]) : ""; }
+  function offerRefresh(){
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = "New boards are in. Tap to refresh.";
+    t.style.cursor = "pointer";
+    t.onclick = () => location.reload();
+    t.hidden = false;
+  }
+
+  const cached = readCache();
+  let shown = null; // the feed copy the page is currently showing
+
+  const fresh = fetch(LIVE_URL, {cache:"no-store"})
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP "+r.status)));
+
+  fresh.then(live => {
+    saveCache(live);
+    if (!started){ mergeLive(live); shown = live; start(); }
+    else if (sig(live) !== sig(shown)) offerRefresh();
+  }).catch(err => {
+    console.warn("Live feed unavailable, showing the saved/published boards only.", err);
+    start();
+  });
+
+  if (cached){
+    mergeLive(cached); shown = cached; start();
+  } else {
+    setTimeout(start, WAIT_MS);
+  }
 })();
 </script>
 
