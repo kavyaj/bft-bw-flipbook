@@ -32,7 +32,9 @@ used: every board photo now lives on Cloudinary. They can be deleted.
 
 - **Add a coach:** add a row on the Coaches tab. They appear in the Tally form
   within seconds and on the site within a couple of minutes.
-- **Coach photo:** put an image link in their "Photo URL" cell.
+- **Coach photo:** put an image link in their "Photo URL" cell, or leave it
+  empty and add `images/coaches/<first name>.jpg` (or `.png`) to the repo,
+  e.g. `images/coaches/saj.jpg`. With neither, their initials show.
 - **Add a session:** add a row on the Sessions tab and pick its Type.
 - **Change who drew a board:** edit the Coach cell on its Entries row.
 - **Hide a board:** set its Status to Hidden.
