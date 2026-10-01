@@ -11,7 +11,7 @@ reads everything from it every time the page loads:
 |------------|------------------------------|
 | Entries    | The boards. Only rows with Status = Live are shown. |
 | Coaches    | Coach names, profiles and photos. Rows with "Show on site" = No are hidden. |
-| Sessions   | Session names and their type (Cardio, Strength, HIIT, Hybrid), which drives the filter buttons. |
+| Sessions   | Session names and their type (Cardio, Strength, Hybrid), which drives the filter buttons. |
 
 The Coaches and Sessions tabs also feed the "Who drew it?" and "Session"
 dropdowns in the Tally form automatically (Playbook → Turn on automatic Tally sync).

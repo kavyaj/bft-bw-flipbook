@@ -734,12 +734,11 @@ function doGet() {
 // After that, the Sessions tab is the master list: edit it there, not here.
 const SESSION_CATEGORY = {
   'Balance': 'Strength', 'Pause Reps': 'Strength', 'Power': 'Strength', 'Strength': 'Strength',
-  'Cardio Summit': 'Cardio', 'Cardio U': 'Cardio', 'Summit': 'Cardio',
-  'HIIT': 'HIIT',
+  'Cardio Summit': 'Cardio', 'Cardio U': 'Cardio', 'HIIT': 'Cardio', 'Summit': 'Cardio',
   'Shred': 'Hybrid', 'Strength Endurance': 'Hybrid'
 };
 // The website's workout types. The Sessions tab's Type column must use one of these.
-const CATEGORIES = ['Cardio', 'Strength', 'HIIT', 'Hybrid'];
+const CATEGORIES = ['Cardio', 'Strength', 'Hybrid'];
 
 // Creates the Sessions tab (the master list of sessions) if it isn't there yet,
 // pre-filled with the sessions above. Safe to call any time.
