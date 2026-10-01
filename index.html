@@ -89,7 +89,6 @@ button{cursor:pointer}
 .tag.cat-Strength{background:var(--blue)}
 .tag.cat-HIIT{background:var(--charcoal);color:var(--on-dark)}
 .tag.cat-Hybrid{background:linear-gradient(90deg,var(--coral) 0 50%,var(--blue) 50% 100%)}
-.tag.prog{background:transparent;color:var(--ink-soft);padding-inline:0;letter-spacing:.12em;font-weight:500}
 .date{font-family:var(--hand);font-size:3.9cqw;color:var(--ink-soft);white-space:nowrap}
 .prog-name{font-weight:600;text-transform:uppercase;font-size:7cqw;line-height:1;letter-spacing:.04em;margin:9cqw 0 0;text-wrap:balance}
 .quip{font-family:var(--hand);font-size:6.2cqw;line-height:1.3;color:var(--marker);margin:4cqw 0 0;text-wrap:balance}
@@ -318,7 +317,6 @@ body:not(.mode-book):not(.mode-stack) #book-area,body:not(.mode-book):not(.mode-
       D.boards.push({
         id: lb.id,
         program: lb.program||"",
-        progression: lb.progression||"",
         category: lb.category||"Hybrid",
         date: lb.date||"",
         coach: coachObj ? coachObj.id : (lb.coach||""),

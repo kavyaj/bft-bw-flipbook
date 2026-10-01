@@ -39,7 +39,7 @@ window.__initPlaybook = function(){
     const c = coachById[b.coach] || {name:"Coach TBC",_i:0,id:""};
     return `
       <div class="meta-row">
-        <div class="tags"><span class="tag cat-${esc(b.category)}">${esc(b.category)}</span>${b.progression?`<span class="tag prog">Prog. ${esc(b.progression)}</span>`:""}</div>
+        <div class="tags"><span class="tag cat-${esc(b.category)}">${esc(b.category)}</span></div>
         <span class="date">${fmtDate(b.date)}</span>
       </div>
       <h2 class="prog-name">${esc(b.program)}</h2>
@@ -220,7 +220,7 @@ window.__initPlaybook = function(){
     lbBoard = D.boards.find(b=>b.id===id); if (!lbBoard) return;
     lastFocus = document.activeElement;
     const c = coachById[lbBoard.coach];
-    document.getElementById("lb-title").innerHTML = `${esc(lbBoard.program)}${lbBoard.progression?" · "+esc(lbBoard.progression):""}<small>${fmtDate(lbBoard.date)} · drawn by ${esc(c?c.name:"Coach TBC")}</small>`;
+    document.getElementById("lb-title").innerHTML = `${esc(lbBoard.program)}<small>${fmtDate(lbBoard.date)} · drawn by ${esc(c?c.name:"Coach TBC")}</small>`;
     setOriginal(false); setZoom(false);
     document.getElementById("overlay-lightbox").hidden = false;
     document.querySelector("#overlay-lightbox [data-action=close]").focus();
