@@ -26,7 +26,7 @@ const COACH_COLS = [
 ];
 
 const COLS = [
-  'ID', 'Received', 'Date', 'Session', 'Coach', 'Week', 'Coach note',
+  'ID', 'Received', 'Date', 'Session', 'Coach', 'Coach note',
   'Status', 'Preview', 'One-liner', 'Subheading',
   'Clean photo', 'Original photo', 'Transcript', 'Tally photo', 'Details', 'Photo info'
 ];
@@ -40,7 +40,6 @@ const DEFAULT_PROMPT = [
   "You're writing captions for The Coach's Playbook, a flipbook of whiteboard sketches drawn by the coaches at BFT Beauty World, a gym in Singapore. Members flip through it to see what each class was about.",
   '',
   'This board is from the {session} session on {date}, drawn by Coach {coach}.',
-  'Week of the program: {week}',
   "Note from the coach: {coach_note}",
   '',
   'Look at the photo and write:',
@@ -50,8 +49,6 @@ const DEFAULT_PROMPT = [
   'SUBHEADING: one or two plain sentences telling a member what the session involves. Max 160 characters. Only use facts that are on the board.',
   '',
   'TRANSCRIPT: everything written on the board, in reading order, as plain text. If you can\'t read a word, write [unclear]. Never guess numbers.',
-  '',
-  'WEEK: if the board shows the program week (like 1/4, 3/8, Final), return it exactly. Otherwise return an empty string.',
   '',
   "Style rules: use contractions. No em dashes. No hashtags or emojis. No gym clichés like 'crush it', 'beast mode', 'no pain no gain' or 'level up'. Never invent numbers or moves that aren't on the board.",
   '',
@@ -86,14 +83,13 @@ const GEMINI_SCHEMA = {
     one_liner:    { type: 'STRING' },
     subheading:   { type: 'STRING' },
     transcript:   { type: 'STRING' },
-    week:         { type: 'STRING' },
     board_found:  { type: 'BOOLEAN' },
     top_left:     { type: 'ARRAY', items: { type: 'INTEGER' } },
     top_right:    { type: 'ARRAY', items: { type: 'INTEGER' } },
     bottom_right: { type: 'ARRAY', items: { type: 'INTEGER' } },
     bottom_left:  { type: 'ARRAY', items: { type: 'INTEGER' } }
   },
-  required: ['one_liner', 'subheading', 'transcript', 'week', 'board_found',
+  required: ['one_liner', 'subheading', 'transcript', 'board_found',
              'top_left', 'top_right', 'bottom_right', 'bottom_left']
 };
 
@@ -138,14 +134,14 @@ function setupSheet() {
   en.setFrozenColumns(0);
   const col = n => COLS.indexOf(n) + 1;
   if (isNewEntries) {
-    const widths = { 'ID': 110, 'Received': 130, 'Date': 95, 'Session': 130, 'Coach': 100, 'Week': 60,
+    const widths = { 'ID': 110, 'Received': 130, 'Date': 95, 'Session': 130, 'Coach': 100,
       'Coach note': 200, 'Status': 95, 'Preview': 130, 'One-liner': 280, 'Subheading': 300,
       'Clean photo': 200, 'Original photo': 200, 'Transcript': 300, 'Tally photo': 150,
       'Details': 250, 'Photo info': 150 };
     Object.keys(widths).forEach(n => en.setColumnWidth(col(n), widths[n]));
   }
-  // Plain text so Sheets doesn't turn "1/4" or "2026-09-27" into dates
-  ['ID', 'Date', 'Week', 'Received'].forEach(n => en.getRange(2, col(n), en.getMaxRows() - 1, 1).setNumberFormat('@'));
+  // Plain text so Sheets doesn't turn "2026-09-27" into a date
+  ['ID', 'Date', 'Received'].forEach(n => en.getRange(2, col(n), en.getMaxRows() - 1, 1).setNumberFormat('@'));
   ['One-liner', 'Subheading', 'Coach note', 'Transcript', 'Details'].forEach(n =>
     en.getRange(2, col(n), en.getMaxRows() - 1, 1).setWrap(true));
 
@@ -193,7 +189,7 @@ function setupSheet() {
       .setFontWeight('bold').setBackground('#1A1A1A').setFontColor('#FFFFFF');
     pr.getRange('A2:C3').setValues([
       ['Caption prompt', DEFAULT_PROMPT,
-       'This is what Gemini reads for every new board. Placeholders in {curly brackets} get filled in automatically: {session} {date} {coach} {week} {coach_note} {examples}. Change the tone here, no code needed.'],
+       'This is what Gemini reads for every new board. Placeholders in {curly brackets} get filled in automatically: {session} {date} {coach} {coach_note} {examples}. Change the tone here, no code needed.'],
       ['Example one-liners', DEFAULT_EXAMPLES,
        'One per line. Gemini copies the tone of these. Swap in your favourites as the Playbook grows.']
     ]);
@@ -352,7 +348,6 @@ function doPost(e) {
       put('Date', f.date);
       put('Session', f.session);
       put('Coach', f.coach);
-      put('Week', f.week);
       put('Coach note', f.note);
       put('Tally photo', f.photoUrl);
       put('Status', f.photoUrl ? STATUS.processing : STATUS.error);
@@ -398,7 +393,6 @@ function parseTally_(fields) {
     date: text(find('date of the session')),
     session: dropdown('session'),
     coach: dropdown('who drew it'),
-    week: text(find('week of the program')),
     note: text(find('anything we should know')),
     photoUrl: file ? file.url : ''
   };
@@ -493,7 +487,7 @@ function processOne_(id) {
 
     // 2. Ask Gemini for captions, transcript and board corners
     const small = UrlFetchApp.fetch(cloudUrl_(k.cloud, 'c_limit,w_1600,h_1600/q_80', info.publicId)).getBlob();
-    const prompt = buildPrompt_({ session, coach, date, week: get('Week'), note: get('Coach note') });
+    const prompt = buildPrompt_({ session, coach, date, note: get('Coach note') });
     const ai = askGemini_(prompt, small, cfg, k);
 
     // 3. Straighten + clean the photo, with fallbacks if Cloudinary refuses
@@ -516,7 +510,6 @@ function processOne_(id) {
     set('One-liner', tidy_(ai.one_liner));
     set('Subheading', tidy_(ai.subheading));
     set('Transcript', ai.transcript || '');
-    if (!get('Week') && ai.week) set('Week', ai.week);
     set('Clean photo', clean);
     const pr = findRow_(sh, id);
     sh.getRange(pr, h['Preview']).setFormula('=IMAGE("' + clean + '")');
@@ -667,7 +660,6 @@ function buildPrompt_(v) {
     session: v.session || 'unknown',
     coach: v.coach || 'unknown',
     date: prettyDate_(v.date),
-    week: v.week || 'not given',
     coach_note: v.note || 'none',
     examples: examples
   };
@@ -724,7 +716,6 @@ function doGet() {
         date: g(r, 'Date'),
         program: g(r, 'Session'),
         category: categoryFor_(g(r, 'Session')),
-        progression: g(r, 'Week'),
         coach: g(r, 'Coach'),
         quip: g(r, 'One-liner'),
         note: g(r, 'Subheading'),
@@ -1082,7 +1073,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-02-19",
   "Session": "Strength",
   "Coach": "Jay",
-  "Week": "",
   "One-liner": "0-2-0 means two full seconds on the way down. Yes, I'm counting.",
   "Subheading": "Four exercises, four sets. Warm up, slow it down on a 0-2-0 tempo, then load up for 8 to 10 reps.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260219183642.jpg",
@@ -1096,7 +1086,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-02-20",
   "Session": "Balance",
   "Coach": "Sherlyn",
-  "Week": "Final",
   "One-liner": "Screen 2 is slow on purpose. The wobble is the workout.",
   "Subheading": "Screens 1 and 3 get 45 seconds of work. Screen 2 is slow and controlled, technique first.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260220183806.jpg",
@@ -1110,7 +1099,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-03-11",
   "Session": "HIIT",
   "Coach": "Kenny",
-  "Week": "1/8",
   "One-liner": "Fifteen seconds is short. Make it feel long.",
   "Subheading": "Near max effort, always. Five sets of 15 seconds on, 10 off.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260311173705.jpg",
@@ -1124,7 +1112,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-04-03",
   "Session": "Cardio Summit",
   "Coach": "Meldon",
-  "Week": "",
   "One-liner": "Your partner rests while you work. Try not to take it personally.",
   "Subheading": "Six zones. Finish your targets, swap with your partner, keep alternating for six minutes. Consistency, not kill your partner!",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260403100613.jpg",
@@ -1138,7 +1125,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-04-22",
   "Session": "Cardio Summit",
   "Coach": "Meldon",
-  "Week": "5/8",
   "One-liner": "There's a mountain on the board. You're climbing it three times.",
   "Subheading": "Three sets of 60 seconds per exercise. Climb the mountain at 85 to 89% heart rate, rest at the peak.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260422180429.jpg",
@@ -1152,7 +1138,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-05-09",
   "Session": "Shred",
   "Coach": "Kenny",
-  "Week": "Final",
   "One-liner": "Cardio first or strength first? Either way, you're sweating by zone two.",
   "Subheading": "Pick your order: cardio first or strength first. Work under fatigue and keep every rep clean.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260509103441.jpg",
@@ -1166,7 +1151,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-06-08",
   "Session": "Strength Endurance",
   "Coach": "Jay",
-  "Week": "2nd",
   "One-liner": "Thirty-five seconds, six sets, six zones. Bring a towel. Bring two.",
   "Subheading": "Six zones, two exercises each. Superset 35 seconds per exercise, six sets per zone.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260608183814.jpg",
@@ -1180,7 +1164,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-06-25",
   "Session": "Summit",
   "Coach": "Sherlyn",
-  "Week": "4th",
   "One-liner": "Stay in the purple. I can see your heart rate on the screen.",
   "Subheading": "Controlled intensity, steady state. Keep it in the purple zone, 80 to 89% heart rate. I have the power!",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260625091223.jpg",
@@ -1194,7 +1177,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-08-13",
   "Session": "Summit",
   "Coach": "Meldon",
-  "Week": "3/6",
   "One-liner": "Every round gets longer. Your breathing shouldn't get louder.",
   "Subheading": "Work time climbs from 35 to 60 seconds. Build momentum, pace your breathing, swap in a zone.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260813083249.jpg",
@@ -1208,7 +1190,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-08-17",
   "Session": "Pause Reps",
   "Coach": "Jay",
-  "Week": "",
   "One-liner": "Ken the Hen has better legs than most of you. Let's fix that.",
   "Subheading": "Pause at mid-shin on the deadlift and at the bottom of the squat. No chicken legs today.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260817095546.jpg",
@@ -1222,7 +1203,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-09-04",
   "Session": "Cardio U",
   "Coach": "Sherlyn",
-  "Week": "",
   "One-liner": "Six sets, no stopping. Pikachu did it with tiny legs.",
   "Subheading": "Six sets of 30 seconds, non-stop. If Pika can do it, so can you.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260904131209.jpg",
@@ -1236,7 +1216,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-09-25",
   "Session": "Cardio U",
   "Coach": "Kenny",
-  "Week": "",
   "One-liner": "Cardio? Ewww. I know. I drew a cat so you'd forgive me.",
   "Subheading": "Three zones of four exercises, two laps each. Match your intensity to your heart rate and speed up as you go.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-IMG20260925090237.jpg",
@@ -1250,7 +1229,6 @@ const LEGACY_BOARDS = [
   "Date": "2026-09-26",
   "Session": "Power",
   "Coach": "Sherlyn",
-  "Week": "1/4",
   "One-liner": "Grind like you mean it. Explode like you meant that too.",
   "Subheading": "Paired up, 90 seconds to finish both moves. Grind slow and controlled, then get explosive and sharp.",
   "Clean photo": "https://res.cloudinary.com/demyvto4/image/upload/c_limit,w_1800/q_auto/bft-playbook-legacy/full-power-1of4.jpg",
@@ -1274,7 +1252,7 @@ function importLegacyBoards() {
     put('Received', 'legacy import');
     put('Status', STATUS.live);
     const r = sh.getLastRow() + 1;
-    ['ID', 'Date', 'Week', 'Received'].forEach(n => { if (h[n]) sh.getRange(r, h[n]).setNumberFormat('@'); });
+    ['ID', 'Date', 'Received'].forEach(n => { if (h[n]) sh.getRange(r, h[n]).setNumberFormat('@'); });
     sh.getRange(r, 1, 1, row.length).setValues([row]);
     if (h['Preview']) sh.getRange(r, h['Preview']).setFormula('=IMAGE("' + b['Clean photo'] + '")');
     added++;
