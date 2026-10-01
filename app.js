@@ -29,11 +29,15 @@ window.__initPlaybook = function(){
   let mode = null, flip = null, block = null, list = [], firstBoardPage = 3;
 
   /* ---------- building blocks ---------- */
+  // No Photo URL on the sheet? Try images/coaches/<first name>.jpg, then .png,
+  // and keep the initials if neither exists.
+  const photoSlug = n => String(n||"").replace(/^coach\s+/i,"").trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9-]/g,"");
   function avatar(c){
     const bg = AV_COLORS[c._i % AV_COLORS.length];
-    return c.photo
-      ? `<span class="avatar"><img src="${esc(c.photo)}" alt=""></span>`
-      : `<span class="avatar" style="background:${bg}">${esc(initials(c.name))}</span>`;
+    if (c.photo) return `<span class="avatar"><img src="${esc(c.photo)}" alt=""></span>`;
+    const slug = photoSlug(c.name);
+    const guess = slug ? `<img src="images/coaches/${slug}.jpg" alt="" onerror="if(!this.dataset.png){this.dataset.png=1;this.src='images/coaches/${slug}.png'}else this.remove()">` : "";
+    return `<span class="avatar" style="background:${bg}"><span>${esc(initials(c.name))}</span>${guess}</span>`;
   }
   function infoInner(b){
     const c = coachById[b.coach] || {name:"Coach TBC",_i:0,id:""};
