@@ -8,7 +8,7 @@
    ===================================================================== */
 window.__initPlaybook = function(){
   const D = window.PLAYBOOK;
-  const CATS = ["Cardio","Strength","HIIT","Hybrid"];
+  const CATS = ["Cardio","Strength","Hybrid"];
   const AV_COLORS = ["#00A3E0","#FF5800","#F8C537","#7FD1AE","#C9B6F2","#FF9F7A","#8FD3F4","#FFD08A"];
   const ROSTER_PER_PAGE = 16;
   const ICON = {
@@ -98,7 +98,7 @@ window.__initPlaybook = function(){
   function renderFilters(){
     const f = document.getElementById("filters");
     const base = D.boards.filter(b => state.coach==="all"||b.coach===state.coach);
-    const dot = {Cardio:"var(--coral)",Strength:"var(--blue)",HIIT:"var(--charcoal)",Hybrid:"linear-gradient(90deg,var(--coral) 50%,var(--blue) 50%)"};
+    const dot = {Cardio:"var(--coral)",Strength:"var(--blue)",Hybrid:"linear-gradient(90deg,var(--coral) 50%,var(--blue) 50%)"};
     f.innerHTML = ["All",...CATS].map(c=>{
       const n = c==="All"? base.length : base.filter(b=>b.category===c).length;
       return `<button class="chip-btn" data-action="cat" data-cat="${c}" aria-pressed="${state.cat===c}">${c!=="All"?`<span class="dot" style="background:${dot[c]}"></span>`:""}${c}<span class="n">${n}</span></button>`;
