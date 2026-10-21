@@ -41,9 +41,12 @@ window.__initPlaybook = function(){
   }
   function infoInner(b){
     const c = coachById[b.coach] || {name:"Coach TBC",_i:0,id:""};
+    // A coach whose Role on the sheet starts with "Guest" (e.g. "Guest coach · BFT Bukit Batok")
+    // gets a small shout-out: a Guest coach tag and their Role under their name.
+    const guest = /^guest/i.test(c.role||"");
     return `
       <div class="meta-row">
-        <div class="tags"><span class="tag cat-${esc(b.category)}">${esc(b.category)}</span></div>
+        <div class="tags"><span class="tag cat-${esc(b.category)}">${esc(b.category)}</span>${guest?`<span class="tag tag-guest">Guest coach</span>`:""}</div>
         <span class="date">${fmtDate(b.date)}</span>
       </div>
       <h2 class="prog-name">${esc(b.program)}</h2>
@@ -52,7 +55,7 @@ window.__initPlaybook = function(){
       <div class="grow"></div>
       <button class="coach-row" data-action="profile" data-coach="${esc(c.id)}">
         ${avatar(c)}
-        <span class="who"><span class="drawn">Drawn by</span><span class="c-name">${esc(c.name)}</span><span class="c-link">View profile</span></span>
+        <span class="who"><span class="drawn">${guest?"Drawn for us by our guest":"Drawn by"}</span><span class="c-name">${esc(c.name)}</span>${guest?`<span class="c-from">${esc(c.role)}</span>`:""}<span class="c-link">View profile</span></span>
       </button>`;
   }
   function sketchBtn(b){

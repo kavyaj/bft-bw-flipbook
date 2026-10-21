@@ -38,6 +38,9 @@ used: every board photo now lives on Cloudinary. They can be deleted.
 - **Add a session:** add a row on the Sessions tab and pick its Type.
 - **Change who drew a board:** edit the Coach cell on its Entries row.
 - **Hide a board:** set its Status to Hidden.
+- **Guest coach from another branch:** add them on the Coaches tab with a Role
+  starting with "Guest", e.g. `Guest coach · BFT Bukit Batok`. Their boards get
+  a "Guest coach" tag and a "Drawn for us by our guest" shout-out.
 
 ## Speed
 
